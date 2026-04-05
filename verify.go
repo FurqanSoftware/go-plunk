@@ -1,6 +1,9 @@
 package plunk
 
-import "context"
+import (
+	"context"
+	"net/http"
+)
 
 // VerifyRequest is the request for [Client.Verify].
 type VerifyRequest struct {
@@ -28,7 +31,7 @@ func (c *Client) Verify(ctx context.Context, req *VerifyRequest) (*VerifyRespons
 		Success bool           `json:"success"`
 		Data    VerifyResponse `json:"data"`
 	}
-	if err := c.do(ctx, "/v1/verify", req, &resp); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/v1/verify", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp.Data, nil

@@ -60,17 +60,23 @@ func New(apiKey string, opts ...Option) *Client {
 	return c
 }
 
-func (c *Client) do(ctx context.Context, path string, reqBody, respBody any) error {
-	body, err := json.Marshal(reqBody)
-	if err != nil {
-		return err
+func (c *Client) do(ctx context.Context, method, path string, reqBody, respBody any) error {
+	var bodyReader io.Reader
+	if reqBody != nil {
+		body, err := json.Marshal(reqBody)
+		if err != nil {
+			return err
+		}
+		bodyReader = bytes.NewReader(body)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+path, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, method, c.BaseURL+path, bodyReader)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	if reqBody != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	req.Header.Set("Authorization", "Bearer "+c.APIKey)
 
 	resp, err := c.HTTPClient.Do(req)
@@ -95,5 +101,8 @@ func (c *Client) do(ctx context.Context, path string, reqBody, respBody any) err
 		return apiErr
 	}
 
-	return json.Unmarshal(data, respBody)
+	if respBody != nil && len(data) > 0 {
+		return json.Unmarshal(data, respBody)
+	}
+	return nil
 }

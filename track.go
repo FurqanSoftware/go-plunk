@@ -1,6 +1,9 @@
 package plunk
 
-import "context"
+import (
+	"context"
+	"net/http"
+)
 
 // TrackRequest is the request for [Client.Track]. Subscribed defaults to true
 // on the server when nil.
@@ -25,7 +28,7 @@ func (c *Client) Track(ctx context.Context, req *TrackRequest) (*TrackResponse, 
 		Success bool          `json:"success"`
 		Data    TrackResponse `json:"data"`
 	}
-	if err := c.do(ctx, "/v1/track", req, &resp); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/v1/track", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp.Data, nil

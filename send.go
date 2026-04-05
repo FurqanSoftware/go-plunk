@@ -1,6 +1,9 @@
 package plunk
 
-import "context"
+import (
+	"context"
+	"net/http"
+)
 
 // SendRequest is the request for [Client.Send].
 type SendRequest struct {
@@ -78,7 +81,7 @@ func (c *Client) Send(ctx context.Context, req *SendRequest) (*SendResponse, err
 		Success bool         `json:"success"`
 		Data    SendResponse `json:"data"`
 	}
-	if err := c.do(ctx, "/v1/send", jr, &resp); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/v1/send", jr, &resp); err != nil {
 		return nil, err
 	}
 	return &resp.Data, nil
