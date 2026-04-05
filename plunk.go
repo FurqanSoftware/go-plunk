@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 )
 
 const defaultBaseURL = "https://next-api.useplunk.com"
@@ -23,10 +24,11 @@ type OptionFunc func(*Client)
 
 func (f OptionFunc) apply(c *Client) { f(c) }
 
-// WithBaseURL returns an [Option] that sets the base URL of the API.
+// WithBaseURL returns an [Option] that sets the base URL of the API. Trailing
+// slashes are trimmed.
 func WithBaseURL(url string) Option {
 	return OptionFunc(func(c *Client) {
-		c.BaseURL = url
+		c.BaseURL = strings.TrimRight(url, "/")
 	})
 }
 
