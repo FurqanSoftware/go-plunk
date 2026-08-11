@@ -29,6 +29,46 @@ client := plunk.New("sk_...",
 )
 ```
 
+### Retries
+
+Transient failures are retried automatically. By default a request is attempted
+up to 3 times, with an exponential backoff starting at 500ms and capped at 30s,
+jittered to spread out concurrent clients. A `Retry-After` header takes
+precedence over the backoff; if it asks for a longer wait than the cap, the
+request is not retried.
+
+Network errors and the status codes 408, 429 and 5xx (other than 501) are
+retried:
+
+```go
+client := plunk.New("sk_...", plunk.WithRetry(plunk.RetryConfig{
+    MaxAttempts: 5,
+    MinDelay:    time.Second,
+    MaxDelay:    time.Minute,
+}))
+
+// Or turn retries off entirely.
+client := plunk.New("sk_...", plunk.WithoutRetry())
+```
+
+The Plunk API has no idempotency key, so retries apply to non-idempotent
+requests such as `Send` as well. A request that reached Plunk but whose
+response was lost in transit is retried, and the email is sent twice. If a
+duplicate send is worse than a lost one, narrow the conditions with
+`Retryable`:
+
+```go
+client := plunk.New("sk_...", plunk.WithRetry(plunk.RetryConfig{
+    Retryable: func(req *http.Request, resp *http.Response, err error) bool {
+        // Retry only when the server explicitly did not process the request.
+        if req.Method == http.MethodPost {
+            return err == nil && resp.StatusCode == http.StatusTooManyRequests
+        }
+        return plunk.DefaultRetryable(req, resp, err)
+    },
+}))
+```
+
 ### Send Transactional Email
 
 ```go
